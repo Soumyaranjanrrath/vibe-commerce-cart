@@ -2,9 +2,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 
 dotenv.config();
+
+// Fake Store API configuration
+const FAKE_STORE_API = 'https://fakestoreapi.com/products';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +17,36 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage (fallback if MongoDB is not available)
+// Function to fetch products from Fake Store API
+async function fetchProductsFromFakeStore() {
+  try {
+    const response = await axios.get(FAKE_STORE_API, {
+      timeout: 5000 // 5 second timeout
+    });
+    
+    // Map Fake Store API response to our product structure
+    // Convert USD to INR (approximate rate: 1 USD = 83 INR)
+    const USD_TO_INR = 83;
+    
+    const mappedProducts = response.data.map((item, index) => ({
+      id: String(item.id),
+      name: item.title,
+      price: Math.round(item.price * USD_TO_INR), // Convert to INR
+      image: item.image,
+      description: item.description,
+      category: item.category.charAt(0).toUpperCase() + item.category.slice(1), // Capitalize first letter
+      rating: item.rating?.rate || 4.0,
+      reviews: item.rating?.count || 0
+    }));
+    
+    return mappedProducts;
+  } catch (error) {
+    console.error('Error fetching from Fake Store API:', error.message);
+    return null;
+  }
+}
+
+// In-memory storage (fallback if MongoDB and Fake Store API are not available)
 let products = [
   { 
     id: '1', 
@@ -122,13 +155,24 @@ const CartItem = mongoose.model('CartItem', cartSchema);
 
 // Connect to MongoDB (optional - will use in-memory if fails)
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
-    // Clear and reseed products to ensure latest data
-    Product.deleteMany({}).then(() => {
-      Product.insertMany(products);
-      console.log('Seeded products to MongoDB');
-    });
+    
+    // Try to fetch products from Fake Store API on startup
+    const fakeStoreProducts = await fetchProductsFromFakeStore();
+    if (fakeStoreProducts && fakeStoreProducts.length > 0) {
+      // Update in-memory products
+      products = fakeStoreProducts;
+      // Seed MongoDB with Fake Store API products
+      await Product.deleteMany({});
+      await Product.insertMany(fakeStoreProducts);
+      console.log(`Seeded ${fakeStoreProducts.length} products from Fake Store API to MongoDB`);
+    } else {
+      // Fallback to local products
+      await Product.deleteMany({});
+      await Product.insertMany(products);
+      console.log('Seeded local products to MongoDB');
+    }
   })
   .catch(err => {
     console.log('MongoDB connection failed, using in-memory storage:', err.message);
@@ -139,14 +183,35 @@ mongoose.connect(process.env.MONGODB_URI)
 // GET /api/products - Get all products
 app.get('/api/products', async (req, res) => {
   try {
-    if (mongoose.connection.readyState === 1) {
-      const products = await Product.find();
-      res.json(products);
-    } else {
-      res.json(products);
+    // Priority 1: Try Fake Store API
+    const fakeStoreProducts = await fetchProductsFromFakeStore();
+    if (fakeStoreProducts && fakeStoreProducts.length > 0) {
+      // Update in-memory products for consistency
+      products = fakeStoreProducts;
+      
+      // Also update MongoDB if connected
+      if (mongoose.connection.readyState === 1) {
+        await Product.deleteMany({});
+        await Product.insertMany(fakeStoreProducts);
+      }
+      
+      return res.json(fakeStoreProducts);
     }
+    
+    // Priority 2: Try MongoDB
+    if (mongoose.connection.readyState === 1) {
+      const dbProducts = await Product.find();
+      if (dbProducts && dbProducts.length > 0) {
+        return res.json(dbProducts);
+      }
+    }
+    
+    // Priority 3: Fallback to in-memory products
+    res.json(products);
   } catch (error) {
-    res.json(products); // Fallback to in-memory
+    console.error('Error fetching products:', error.message);
+    // Final fallback to in-memory products
+    res.json(products);
   }
 });
 
