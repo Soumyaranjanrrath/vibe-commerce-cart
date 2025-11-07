@@ -1,0 +1,20 @@
+{
+  "name": "vibe-commerce-cart",
+  "version": "1.0.0",
+  "description": "Full Stack E-Commerce Cart Application for Vibe Commerce",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
+  },
+  "keywords": ["ecommerce", "cart", "react", "express", "mongodb", "fullstack"],
+  "author": "Vibe Commerce Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
