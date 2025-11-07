@@ -39,7 +39,42 @@ This project demonstrates end-to-end e-commerce flow — from fetching products 
 | `GET` | `/api/cart` | Retrieve all cart items with total |
 | `POST` | `/api/checkout` | Generate mock checkout receipt |
 
----
+## ⚙️ Installation & Setup
 
-## 🧩 Project Structure
+### Clone the Repository
+```bash
+  git clone https://github.com/<your-username>/vibe-ecommerce-cart.git
+  cd vibe-ecommerce-cart
+```
+## Setup Backend
+```
+cd backend
+npm install
+node server.js
+Runs on http://localhost:5000
+```
+## Setup Frontend
+```
+cd ../frontend
+npm install
+npm start```
+Runs on http://localhost:3000
 
+## 🧾 Sample Checkout Response
+```{
+  "message": "Checkout successful",
+  "receipt": {
+    "id": "f27c9d42-53a1-4b0c-b3f0-91ea612ff982",
+    "name": "Tapan",
+    "email": "tapan@example.com",
+    "total": 4297,
+    "timestamp": "2025-11-07T16:45:12.421Z"
+  }
+}
+```
+## Final Note
+
+This project embodies clean logic, smooth UI, and balanced design — proving how full-stack magic can live in even the simplest e-commerce flow.
+Crafted with ❤️ and powered by curiosity.
+
+⭐ If you liked this project, don’t forget to give it a star!
