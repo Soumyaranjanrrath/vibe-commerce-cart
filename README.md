@@ -24,9 +24,9 @@ This project demonstrates end-to-end e-commerce flow — from fetching products 
 | Layer        | Technologies                          |
 | ------------ | ------------------------------------- |
 | 💻 Frontend  | React 18, Axios, CSS3                 |
-| ⚙️ Backend   | Node.js, Express.js                    |
+| ⚙️ Backend   | Node.js, Express.js, Axios            |
 | 🗄️ Database | MongoDB/Mongoose (with in-memory fallback) |
-| 🔗 APIs      | REST Architecture                     |
+| 🔗 APIs      | REST Architecture, Fake Store API     |
 | 🎨 Styling   | Pure CSS with responsive design       |
 | 🧠 State     | React Hooks                            |
 
@@ -141,6 +141,17 @@ MONGODB_URI=mongodb://localhost:27017/vibecommerce
 NODE_ENV=development
 ```
 
+### Product Data Source
+The application uses a **3-tier fallback system** for product data:
+1. **Primary**: [Fake Store API](https://fakestoreapi.com/) - Fetches real product data on startup and on each request
+2. **Secondary**: MongoDB - Stores products from Fake Store API for persistence
+3. **Tertiary**: In-memory mock products - Fallback if API and MongoDB are unavailable
+
+Products from Fake Store API are automatically:
+- Converted from USD to Indian Rupees (₹) at 1 USD = 83 INR
+- Mapped to our product structure (title → name, rating.rate → rating, etc.)
+- Cached in MongoDB for offline availability
+
 ### Frontend Configuration
 - Proxy configured in `package.json` to connect to backend
 - Environment-based API URL configuration
@@ -179,13 +190,14 @@ vibe-commerce-cart/
 
 ## 🌟 Features Implemented
 
+- ✅ **Fake Store API Integration**: Fetches products from Fake Store API with automatic fallback
 - ✅ **Database Persistence**: MongoDB integration with fallback
-- ✅ **Product Images**: Real product photos from Pexels
-- ✅ **Indian Currency**: Prices displayed in ₹ (Indian Rupees)
-- ✅ **Product Ratings**: Star ratings with review counts
+- ✅ **Product Images**: Real product photos from Fake Store API
+- ✅ **Indian Currency**: Prices displayed in ₹ (Indian Rupees) - automatically converted from USD
+- ✅ **Product Ratings**: Star ratings with review counts from Fake Store API
 - ✅ **Search & Filter**: Real-time search and category filtering
 - ✅ **Quantity Management**: Update quantities in cart
-- ✅ **Error Handling**: Comprehensive error management
+- ✅ **Error Handling**: Comprehensive error management with multiple fallback layers
 - ✅ **Responsive Design**: Mobile-friendly interface
 - ✅ **Loading States**: User feedback during API calls
 - ✅ **Form Validation**: Input validation on checkout
